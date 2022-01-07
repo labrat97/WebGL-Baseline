@@ -13,11 +13,13 @@ uniform int now;
 
 // Add all of the cubes together, perform a cube root, then multiply x to the result.
 float treeavg(float x, float y, float z) {
-    float x3 = pow(x, 3.);
-    float y3 = pow(y, 3.);
-    float z3 = pow(z, 3.);
+#define POWER 3.
+#define ROOT 3.    
+    float xp = pow(x, POWER);
+    float yp = pow(y, POWER);
+    float zp = pow(z, POWER);
 
-    return x * pow(x3 + y3 + z3, 1./3.);
+    return x * pow(xp + yp + zp, 1./ROOT);
 }
 
 void main() {
