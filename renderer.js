@@ -116,7 +116,7 @@ async function setupWebGL (evt) {
     gl.uniform1f(minwid, smallestWinSize());
     gl.uniform1i(nowlck, new Date().getTime());
     gl.drawArrays(gl.TRIANGLES, 0, 3);
-  }, [33]);
+  }, [(1./30.)*1000.]);
 }
 
 // Get the smallest of the two window dimensions for use in constant output ratio
