@@ -2,7 +2,7 @@
 "use strict"
 
 window.addEventListener("load", setupWebGL, false);
-var gl, program, winform, minwid, nowlck;
+var gl, program, winform, minwid, nowlck, backbuff, backbuffpix;
 
 async function setupWebGL (evt) {
   // Create a rendering context. In other words, create the base canvas to draw
@@ -63,10 +63,14 @@ async function setupWebGL (evt) {
   winform = gl.getUniformLocation(program, "winsize");
   minwid = gl.getUniformLocation(program, "minwid");
   nowlck = gl.getUniformLocation(program, "now");
+  backbuff = gl.getUniformLocation(program, "backbuffer");
   gl.uniform2f(winform, gl.drawingBufferWidth, gl.drawingBufferHeight);
   gl.uniform1f(minwid, smallestWinSize());
   gl.uniform1i(nowlck, Date.now());
-
+  backbuffpix = new Uint8Array(gl.drawingBufferWidth * gl.drawingBufferHeight * 4);
+  gl.readPixels(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight, gl.RGBA, gl.UNSIGNED_BYTE, backbuffpix);
+  gl.texImage2D(backbuff, 0, gl.RGBA, gl.drawingBufferWidth, gl.drawingBufferHeight, 0, gl.RGBA, gl.UNSIGNED_BYTE, backbuffpix);
+  
   // Now that the program is all glued together, get rid of the compiled shader
   // chunks. We wouldn't want to eat up the ever-so-valueable resources would we?
   gl.detachShader(program, vertexShader);
@@ -115,6 +119,10 @@ async function setupWebGL (evt) {
     gl.uniform2f(winform, gl.drawingBufferWidth, gl.drawingBufferHeight);
     gl.uniform1f(minwid, smallestWinSize());
     gl.uniform1i(nowlck, new Date().getTime());
+    
+    gl.readPixels(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight, gl.RGBA, gl.UNSIGNED_BYTE, backbuffpix);
+    gl.texImage2D(backbuff, 0, gl.RGBA, gl.drawingBufferWidth, gl.drawingBufferHeight, 0, gl.RGBA, gl.UNSIGNED_BYTE, backbuffpix);
+
     gl.drawArrays(gl.TRIANGLES, 0, 3);
   }, [(1./30.)*1000.]);
 }
@@ -167,8 +175,8 @@ function getRenderingContext() {
   canvas.width = canvas.clientWidth;
   canvas.height = canvas.clientHeight;
 
-  var gl = canvas.getContext("webgl") 
-    || canvas.getContext("experimental-webgl");
+  var gl = canvas.getContext("webgl", {preserveDrawingBuffer: true}) 
+    || canvas.getContext("experimental-webgl", {preserveDrawingBuffer: true});
   
   if (!gl) {
     var paragraph = document.querySelector("p");
