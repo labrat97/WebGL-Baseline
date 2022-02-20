@@ -3,6 +3,7 @@
 
 window.addEventListener("load", setupWebGL, false);
 var gl, program, winform, minwid, nowlck, backbuff, backbuffpix;
+var timeStart = Date.now()
 
 async function setupWebGL (evt) {
   // Create a rendering context. In other words, create the base canvas to draw
@@ -63,10 +64,13 @@ async function setupWebGL (evt) {
   winform = gl.getUniformLocation(program, "winsize");
   minwid = gl.getUniformLocation(program, "minwid");
   nowlck = gl.getUniformLocation(program, "now");
+  timelck = gl.getUniformLocation(program, "time");
   backbuff = gl.getUniformLocation(program, "backbuffer");
   gl.uniform2f(winform, gl.drawingBufferWidth, gl.drawingBufferHeight);
   gl.uniform1f(minwid, smallestWinSize());
   gl.uniform1i(nowlck, Date.now());
+  gl.uniform1i(timelck, Date.now()-timeStart)
+
   backbuffpix = new Uint8Array(gl.drawingBufferWidth * gl.drawingBufferHeight * 4);
   gl.readPixels(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight, gl.RGBA, gl.UNSIGNED_BYTE, backbuffpix);
   gl.texImage2D(backbuff, 0, gl.RGBA, gl.drawingBufferWidth, gl.drawingBufferHeight, 0, gl.RGBA, gl.UNSIGNED_BYTE, backbuffpix);
@@ -119,6 +123,7 @@ async function setupWebGL (evt) {
     gl.uniform2f(winform, gl.drawingBufferWidth, gl.drawingBufferHeight);
     gl.uniform1f(minwid, smallestWinSize());
     gl.uniform1i(nowlck, new Date().getTime());
+    gl.uniform1i(timelck, (new Date().getTime())-timeStart);
     
     gl.readPixels(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight, gl.RGBA, gl.UNSIGNED_BYTE, backbuffpix);
     gl.texImage2D(backbuff, 0, gl.RGBA, gl.drawingBufferWidth, gl.drawingBufferHeight, 0, gl.RGBA, gl.UNSIGNED_BYTE, backbuffpix);
