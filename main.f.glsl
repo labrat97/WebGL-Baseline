@@ -1,12 +1,14 @@
 #version 100
 precision highp float;
 
+// Defines required for proper program run
 #define GRADIENT_DELTA 0.5
 #define FUDGE_FACTOR 0.5
 #define COMPARE_FUDGE_FACTOR 0.2
 #define PHI ((sqrt(5.)+1.)/2.)
 #define MAX_RADIUS 0.5
 
+// Bring in the outside information needed for updating
 uniform float now;
 uniform vec2 winsize;
 uniform float minwid;
