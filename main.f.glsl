@@ -1,5 +1,6 @@
 #version 100
 precision highp float;
+
 #define GRADIENT_DELTA 0.5
 #define FUDGE_FACTOR 0.5
 #define COMPARE_FUDGE_FACTOR 0.2
@@ -130,7 +131,7 @@ vec3 compute_color(vec3 ro, vec3 rd, float t)
     vec3 nor = normal(p);
     vec3 ref = reflect(rd, nor);
     
-    vec3 c = hsv2rgb(vec3(-.1+pow(length(p),2.)*0.075, 1.0, 1.));
+    vec3 c = hsv2rgb(vec3(-((log(length(p)))*0.33), 1., 1.));
     
     
     float dif = clamp( dot( nor, l ), 0.0, 1.0 );

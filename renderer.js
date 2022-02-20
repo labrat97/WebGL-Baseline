@@ -3,6 +3,7 @@
 
 window.addEventListener("load", setupWebGL, false);
 var gl, program, winform, minwid, maxwid, nowlck, backbuff, backbuffpix;
+var progStart = new Date();
 
 async function setupWebGL (evt) {
   // Create a rendering context. In other words, create the base canvas to draw
@@ -67,7 +68,7 @@ async function setupWebGL (evt) {
   backbuff = gl.getUniformLocation(program, "backbuffer");
   gl.uniform2f(winform, gl.drawingBufferWidth, gl.drawingBufferHeight);
   gl.uniform1f(minwid, smallestWinSize());
-  gl.uniform1f(nowlck, Date.now()/1000.);
+  gl.uniform1f(nowlck, timeFloat());
   gl.uniform1f(maxwid, largestWinSize());
 
   backbuffpix = new Uint8Array(gl.drawingBufferWidth * gl.drawingBufferHeight * 4);
@@ -126,7 +127,7 @@ async function setupWebGL (evt) {
     gl.uniform2f(winform, gl.drawingBufferWidth, gl.drawingBufferHeight);
     gl.uniform1f(minwid, smallestWinSize());
     gl.uniform1f(maxwid, largestWinSize());
-    gl.uniform1f(nowlck, Date.now()/1000.);
+    gl.uniform1f(nowlck, timeFloat());
     
     gl.readPixels(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight, gl.RGBA, gl.UNSIGNED_BYTE, backbuffpix);
     gl.texImage2D(backbuff, 0, gl.RGBA, gl.drawingBufferWidth, gl.drawingBufferHeight, 0, gl.RGBA, gl.UNSIGNED_BYTE, backbuffpix);
@@ -149,6 +150,12 @@ function largestWinSize() {
     return gl.drawingBufferHeight;
   }
   return gl.drawingBufferWidth;
+}
+function timeFloat() {
+  var currentDate = new Date();
+  var delta = currentDate - progStart;
+
+  return delta / 1000.;
 }
 
 // Sets up the attributes for the shaders that are running. This is used before
