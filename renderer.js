@@ -133,7 +133,7 @@ async function setupWebGL (evt) {
     gl.texImage2D(backbuff, 0, gl.RGBA, gl.drawingBufferWidth, gl.drawingBufferHeight, 0, gl.RGBA, gl.UNSIGNED_BYTE, backbuffpix);
 
     gl.drawArrays(gl.TRIANGLES, 0, 3);
-  }, [(1./30.)*1000.]);
+  }, [(1./120.)*1000.]);
 }
 
 // Get the smallest of the two window dimensions for use in constant output ratio
