@@ -2,8 +2,7 @@
 "use strict"
 
 window.addEventListener("load", setupWebGL, false);
-var gl, program, winform, minwid, nowlck, backbuff, backbuffpix;
-var timeStart = Date.now()
+var gl, program, winform, minwid, maxwid, nowlck, backbuff, backbuffpix;
 
 async function setupWebGL (evt) {
   // Create a rendering context. In other words, create the base canvas to draw
@@ -63,13 +62,13 @@ async function setupWebGL (evt) {
   gl.linkProgram(program);
   winform = gl.getUniformLocation(program, "winsize");
   minwid = gl.getUniformLocation(program, "minwid");
+  maxwid = gl.getUniformLocation(program, "maxwid");
   nowlck = gl.getUniformLocation(program, "now");
-  timelck = gl.getUniformLocation(program, "time");
   backbuff = gl.getUniformLocation(program, "backbuffer");
   gl.uniform2f(winform, gl.drawingBufferWidth, gl.drawingBufferHeight);
   gl.uniform1f(minwid, smallestWinSize());
-  gl.uniform1i(nowlck, Date.now());
-  gl.uniform1i(timelck, Date.now()-timeStart)
+  gl.uniform1f(nowlck, Date.now()/1000.);
+  gl.uniform1f(maxwid, largestWinSize());
 
   backbuffpix = new Uint8Array(gl.drawingBufferWidth * gl.drawingBufferHeight * 4);
   gl.readPixels(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight, gl.RGBA, gl.UNSIGNED_BYTE, backbuffpix);
@@ -104,8 +103,12 @@ async function setupWebGL (evt) {
   gl.useProgram(program);
   setInterval(function() {
     var canvas = document.querySelector("canvas");
-    canvas.width = canvas.clientWidth;
-    canvas.height = canvas.clientHeight;
+    if (canvas.width != canvas.clientWidth) {
+      canvas.width = canvas.clientWidth;
+    }
+    if (canvas.height != canvas.clientHeight) {
+      canvas.height = canvas.clientHeight;
+    }
 
     var gl = canvas.getContext("webgl") 
       || canvas.getContext("experimental-webgl");
@@ -122,8 +125,8 @@ async function setupWebGL (evt) {
       gl.drawingBufferWidth, gl.drawingBufferHeight);
     gl.uniform2f(winform, gl.drawingBufferWidth, gl.drawingBufferHeight);
     gl.uniform1f(minwid, smallestWinSize());
-    gl.uniform1i(nowlck, new Date().getTime());
-    gl.uniform1i(timelck, (new Date().getTime())-timeStart);
+    gl.uniform1f(maxwid, largestWinSize());
+    gl.uniform1f(nowlck, Date.now()/1000.);
     
     gl.readPixels(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight, gl.RGBA, gl.UNSIGNED_BYTE, backbuffpix);
     gl.texImage2D(backbuff, 0, gl.RGBA, gl.drawingBufferWidth, gl.drawingBufferHeight, 0, gl.RGBA, gl.UNSIGNED_BYTE, backbuffpix);
@@ -140,6 +143,12 @@ function smallestWinSize() {
     return gl.drawingBufferWidth;
   }
   return gl.drawingBufferHeight;
+}
+function largestWinSize() {
+  if (gl.drawingBufferWidth < gl.drawingBufferHeight) {
+    return gl.drawingBufferHeight;
+  }
+  return gl.drawingBufferWidth;
 }
 
 // Sets up the attributes for the shaders that are running. This is used before

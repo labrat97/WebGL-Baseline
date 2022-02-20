@@ -1,17 +1,16 @@
 #version 100
 precision highp float;
-
 #define GRADIENT_DELTA 0.5
 #define FUDGE_FACTOR 0.5
 #define COMPARE_FUDGE_FACTOR 0.2
-#define PHI ((1.+sqrt(5.))/2.)
+#define PHI ((sqrt(5.)+1.)/2.)
 
-// Pull in program data
+uniform float now;
 uniform vec2 winsize;
 uniform float minwid;
-uniform int time;
-uniform int now;
-uniform sampler2D backbuffer;
+uniform float maxwid;
+#define time now
+#define size vec2(minwid)
 
 float length2( vec2 p )
 {
@@ -44,7 +43,7 @@ float sdTorus88( vec3 p, vec2 t )
 
 float sdTorus( vec3 p, vec2 t )
 {
-  return length(vec2(length(p.xz)-t.x,p.y))-t.y;
+  return length( vec2(length(p.xz)-t.x,p.y) )-t.y;
 }
 
 mat3 rotateY(float r)
@@ -63,12 +62,12 @@ float DE(vec3 p0)
 {
 	//vec3 p=p0+sin(p0.yzx*4.0+2.4*sin(p0.zxy*5.0+time)+time*0.7)*0.5;
 	//float d=length(p)-1.0;
-    float t = float(now)*.3/1000.;
+    float t = time*.3;
 	mat3 m = rotateZ(t)*rotateY(t*.5);
     vec3 p = p0*m;
 	float d = length(p0)+1.;
-    float r = 1./PHI;
-    for(int i = 0; i < 9; ++i)
+    float r = 1.+(1./PHI);
+    for(int i = 0; i < 7; ++i)
     {
         d = min(d, sdTorus(p, vec2(r, 0.015)));
         p *= m;
@@ -112,7 +111,7 @@ float calcAO( in vec3 pos, in vec3 nor )
 {
 	float occ = 0.0;
     float sca = 1.0;
-    for( int i=0; i<7; i++ )
+    for( int i=0; i<5; i++ )
     {
         float hr = 0.01 + 0.12*float(i)/4.0;
         vec3 aopos =  nor * hr + pos;
@@ -123,20 +122,6 @@ float calcAO( in vec3 pos, in vec3 nor )
     return clamp( 1.0 - 3.0*occ, 0.0, 1.0 );    
 }
 
-float softshadow( in vec3 ro, in vec3 rd, in float mint, in float tmax )
-{
-	float res = 1.0;
-    float t = mint;
-    for( int i=0; i<8; i++ )
-    {
-		float h = DE( ro + rd*t );
-        res = min( res, 8.0*h/t );
-        t += clamp( h, 0.02, 0.10 );
-        if( h<0.001 || t>tmax ) break;
-    }
-    return clamp( res, 0.3, 1. );
-}
-
 
 vec3 compute_color(vec3 ro, vec3 rd, float t)
 {
@@ -145,10 +130,11 @@ vec3 compute_color(vec3 ro, vec3 rd, float t)
     vec3 nor = normal(p);
     vec3 ref = reflect(rd, nor);
     
-    vec3 c = hsv2rgb(vec3(-0.1+(pow(length(p),2.)*0.05*PHI), 1.3-(length(p)*.2), .9));
+    vec3 c = hsv2rgb(vec3(-.1+pow(length(p),2.)*0.075, 1.0, 1.));
     
-    float dif = clamp( dot( nor, l ), 0.0, 1.0 );//*softshadow(p, l, 0.02, 2.5);
-    float dom = smoothstep( -0.1, 0.1, ref.y );//*softshadow(p, ref, 0.02, 2.5);
+    
+    float dif = clamp( dot( nor, l ), 0.0, 1.0 );
+    float dom = smoothstep( -0.1, 0.1, ref.y );
    	float fre = pow( clamp(1.0+dot(nor,rd),0.0,1.0), 2.0 );
     
     float ao = calcAO(p, nor);
@@ -162,12 +148,12 @@ vec3 compute_color(vec3 ro, vec3 rd, float t)
 
 vec4 pixel(vec2 pxx)
 {
-    float pxl=4.0/1.;//find the pixel size
-	float tim=float(now)/1000.;
+    float pxl=4.0/size.y;//find the pixel size
+	float tim=time*0.03+(0.5)*5.;
 	
 	//position camera
-	vec3 ro=vec3(cos(tim),-0.5,sin(tim))*3.4;
-	vec3 rd=normalize(vec3((2.0*pxx-vec2(1.,1.))/1.,2.0));
+	vec3 ro=vec3(cos(tim),0.5+(0.5)*2.-1.,sin(tim))*3.4;
+	vec3 rd=normalize(vec3((2.0*pxx-winsize.xy)/size.y,2.0));
 	rd=lookat(-ro,vec3(0.0,1.0,0.0))*rd;
 	//ro=eye;rd=normalize(dir);
 	vec3 bcol=vec3(1.0);
@@ -176,7 +162,7 @@ vec4 pixel(vec2 pxx)
 	float t=DDE(ro,rd).y*rndStart(pxx),d,od=1.0;
     bool hit = false;
 	vec4 col=vec4(0.);//color accumulator
-	for(int i=0;i<120;i++){
+	for(int i=0;i<144;i++){
 		vec2 v=DDE(ro+rd*t,rd);
 		d=v.x;//DE(ro+rd*t);
 		float px=pxl*(1.0+t);
@@ -191,9 +177,8 @@ vec4 pixel(vec2 pxx)
     return hit ? vec4(compute_color(ro, rd, t), 1.) : 
     			 hsv2rgb(vec3(0., 1., 0.)).xyzz*.2;
 }
-
-void main(){
-    vec2 xy = gl_FragCoord.xy/minwid;
+void main() {
+    vec2 xy = (gl_FragCoord.xy/size);
 	float v = .6 + 0.4*pow(20.0*xy.x*xy.y*(1.0-xy.x)*(1.0-xy.y), 0.5);
 	gl_FragColor=pow(pixel(gl_FragCoord.xy)*v, vec4(1./2.2));
 } 
