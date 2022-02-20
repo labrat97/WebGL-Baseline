@@ -1,5 +1,5 @@
 #version 100
-precision lowp float;
+precision mediump float;
 
 // Defines required for proper program run
 #define GRADIENT_DELTA 0.5
