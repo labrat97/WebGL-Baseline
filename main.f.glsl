@@ -5,6 +5,7 @@ precision highp float;
 #define FUDGE_FACTOR 0.5
 #define COMPARE_FUDGE_FACTOR 0.2
 #define PHI ((sqrt(5.)+1.)/2.)
+#define MAX_RADIUS 0.5
 
 uniform float now;
 uniform vec2 winsize;
@@ -67,8 +68,8 @@ float DE(vec3 p0)
 	mat3 m = rotateZ(t)*rotateY(t*.5);
     vec3 p = p0*m;
 	float d = length(p0)+1.;
-    float r = 1.+(1./PHI);
-    for(int i = 0; i < 7; ++i)
+    float r = (1.+PHI)*(MAX_RADIUS);
+    for(int i = 0; i < 8; ++i)
     {
         d = min(d, sdTorus(p, vec2(r, 0.015)));
         p *= m;
@@ -131,7 +132,7 @@ vec3 compute_color(vec3 ro, vec3 rd, float t)
     vec3 nor = normal(p);
     vec3 ref = reflect(rd, nor);
     
-    vec3 c = hsv2rgb(vec3(-((log(length(p)))*0.33), 1., 1.));
+    vec3 c = hsv2rgb(vec3(-0.02-((log(length(p)))*exp(-exp(1.))), 1., 1.));
     
     
     float dif = clamp( dot( nor, l ), 0.0, 1.0 );
@@ -149,11 +150,18 @@ vec3 compute_color(vec3 ro, vec3 rd, float t)
 
 vec4 pixel(vec2 pxx)
 {
+    // Branch out from the full computation if available
+    vec2 centerRaw = winsize/2.;
+    float dist = sqrt(pow(gl_FragCoord.x-centerRaw.x, 2.) + pow(gl_FragCoord.y-centerRaw.y, 2.));
+    float distRel = dist/minwid;
+    if (distRel > MAX_RADIUS) return vec4(0., 0., 0., 1.);
+
+    // Get current location parameters
     float pxl=4.0/size.y;//find the pixel size
 	float tim=time*0.03+(0.5)*5.;
 	
 	//position camera
-	vec3 ro=vec3(cos(tim),0.5+(0.5)*2.-1.,sin(tim))*3.4;
+	vec3 ro=vec3(0.,0.05+(pow(cos(tim),2.)*0.1),1.)*3.4;
 	vec3 rd=normalize(vec3((2.0*pxx-winsize.xy)/size.y,2.0));
 	rd=lookat(-ro,vec3(0.0,1.0,0.0))*rd;
 	//ro=eye;rd=normalize(dir);
