@@ -1,20 +1,23 @@
 #version 100
-precision highp float;
+precision lowp float;
 
 // Defines required for proper program run
-#define GRADIENT_DELTA 0.5
-#define FUDGE_FACTOR 0.5
-#define COMPARE_FUDGE_FACTOR 0.2
+#define GRADIENT_DELTA 0.
+#define FUDGE_FACTOR 0.
+#define COMPARE_FUDGE_FACTOR 1.
 #define PHI ((sqrt(5.)+1.)/2.)
 #define MAX_RADIUS 0.5
+#define PI 3.14159265358
 
 // Bring in the outside information needed for updating
 uniform float now;
 uniform vec2 winsize;
 uniform float minwid;
 uniform float maxwid;
-#define time now
+#define time log(now/PHI)
 #define size vec2(minwid)
+
+float rndStart(vec2 co){return fract(sin(dot(co,vec2(123.42,117.853)))*412.453);}
 
 float length2( vec2 p )
 {
@@ -47,7 +50,7 @@ float sdTorus88( vec3 p, vec2 t )
 
 float sdTorus( vec3 p, vec2 t )
 {
-  return length( vec2(length(p.xz)-t.x,p.y) )-t.y;
+  return length( vec2(length(p.xz)-t.x,p.y))-t.y;
 }
 
 mat3 rotateY(float r)
@@ -58,16 +61,30 @@ mat3 rotateY(float r)
 
 mat3 rotateZ(float r)
 {
-    vec2 cs = vec2(cos(r), sin(r));
+    vec2 cs = vec2(cos(-r), sin(-r));
     return mat3(cs.x, cs.y, 0., -cs.y, cs.x, 0., 0., 0., 1.);
+}
+
+bool randRinged = false;
+float randRing[32];
+void startRing(vec2 seed) {
+    if (randRinged) return;
+
+    float pre = sqrt(seed.x * seed.y);
+    randRing[0] = rndStart(seed);
+    for (int i = 1; i < 32; i++) {
+        float valStart = rndStart(vec2(randRing[i-1], pre));
+        randRing[i] = 1./(1.+exp(-valStart));
+        pre = randRing[i-1];
+    }
+
+    randRinged = true;
 }
 
 float DE(vec3 p0)
 {
-	//vec3 p=p0+sin(p0.yzx*4.0+2.4*sin(p0.zxy*5.0+time)+time*0.7)*0.5;
-	//float d=length(p)-1.0;
     float t = time*.3;
-	mat3 m = rotateZ(t)*rotateY(t*.5);
+    mat3 m = rotateZ(t)*rotateY(t*.5);
     vec3 p = p0*m;
 	float d = length(p0)+1.;
     float r = (1.+PHI)*(MAX_RADIUS);
@@ -88,8 +105,6 @@ vec2 DDE(vec3 p, vec3 rd){
 	dt/=max(dt,d1-d2);
 	return vec2(d1,FUDGE_FACTOR*log(d1*dt+1.0));
 }
-
-float rndStart(vec2 co){return fract(sin(dot(co,vec2(123.42,117.853)))*412.453);}
 
 mat3 lookat(vec3 fw,vec3 up){
 	fw=normalize(fw);vec3 rt=normalize(cross(fw,up));return mat3(rt,cross(rt,fw),fw);
@@ -158,13 +173,13 @@ vec4 pixel(vec2 pxx)
     float distRel = dist/minwid;
     if (distRel > MAX_RADIUS) return vec4(0., 0., 0., 1.);
 
-    // Get current location parameters
+    // Get current external marking location parameters
     float pxl=4.0/size.y;//find the pixel size
 	float tim=time*0.03+(0.5)*5.;
 	
 	//position camera
-	vec3 ro=vec3(0.,0.05+(pow(cos(tim),2.)*0.1),1.)*3.4;
-	vec3 rd=normalize(vec3((2.0*pxx-winsize.xy)/size.y,2.0));
+	vec3 ro=vec3(PI/2.,0.,0.)*3.4;
+	vec3 rd=normalize(vec3((2.0*pxx-winsize.xy)/size.y,PI));
 	rd=lookat(-ro,vec3(0.0,1.0,0.0))*rd;
 	//ro=eye;rd=normalize(dir);
 	vec3 bcol=vec3(1.0);
@@ -186,9 +201,10 @@ vec4 pixel(vec2 pxx)
 		if(t>10.0)break;
 	}
     return hit ? vec4(compute_color(ro, rd, t), 1.) : 
-    			 hsv2rgb(vec3(0., 1., 0.)).xyzz*.2;
+    			 vec4(hsv2rgb(vec3(0.04*(cos(0.3*now+rndStart(pxx))+(1.-(1./PHI)))/2., 1., 0.5*exp(-pow(distRel*2.*PI*PHI,2.)/2.))),1.);
 }
 void main() {
+    startRing(gl_FragCoord.xy);
     vec2 xy = (gl_FragCoord.xy/size);
 	float v = .6 + 0.4*pow(20.0*xy.x*xy.y*(1.0-xy.x)*(1.0-xy.y), 0.5);
 	gl_FragColor=pow(pixel(gl_FragCoord.xy)*v, vec4(1./2.2));

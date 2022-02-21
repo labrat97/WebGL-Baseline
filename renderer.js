@@ -65,15 +65,10 @@ async function setupWebGL (evt) {
   minwid = gl.getUniformLocation(program, "minwid");
   maxwid = gl.getUniformLocation(program, "maxwid");
   nowlck = gl.getUniformLocation(program, "now");
-  backbuff = gl.getUniformLocation(program, "backbuffer");
   gl.uniform2f(winform, gl.drawingBufferWidth, gl.drawingBufferHeight);
   gl.uniform1f(minwid, smallestWinSize());
   gl.uniform1f(nowlck, timeFloat());
   gl.uniform1f(maxwid, largestWinSize());
-
-  backbuffpix = new Uint8Array(gl.drawingBufferWidth * gl.drawingBufferHeight * 4);
-  gl.readPixels(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight, gl.RGBA, gl.UNSIGNED_BYTE, backbuffpix);
-  gl.texImage2D(backbuff, 0, gl.RGBA, gl.drawingBufferWidth, gl.drawingBufferHeight, 0, gl.RGBA, gl.UNSIGNED_BYTE, backbuffpix);
   
   // Now that the program is all glued together, get rid of the compiled shader
   // chunks. We wouldn't want to eat up the ever-so-valueable resources would we?
@@ -128,9 +123,6 @@ async function setupWebGL (evt) {
     gl.uniform1f(minwid, smallestWinSize());
     gl.uniform1f(maxwid, largestWinSize());
     gl.uniform1f(nowlck, timeFloat());
-    
-    gl.readPixels(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight, gl.RGBA, gl.UNSIGNED_BYTE, backbuffpix);
-    gl.texImage2D(backbuff, 0, gl.RGBA, gl.drawingBufferWidth, gl.drawingBufferHeight, 0, gl.RGBA, gl.UNSIGNED_BYTE, backbuffpix);
 
     gl.drawArrays(gl.TRIANGLES, 0, 3);
   }, [(1./120.)*1000.]);
