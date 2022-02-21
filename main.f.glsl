@@ -1,5 +1,5 @@
 #version 100
-precision lowp float;
+precision mediump float;
 
 // Defines required for proper program run
 #define GRADIENT_DELTA 0.
@@ -91,8 +91,8 @@ float DE(vec3 p0)
     for(int i = 0; i < RING_COUNT; ++i)
     {
         p *= rotateZ(t*float(i+1)/(float(RING_COUNT)*pow(PHI, float(i)*PHI))) * rotateY(t*PI*float(i+1)/(float(RING_COUNT)*pow(PHI, float(i)*PHI)));
-        d = min(d, sdTorus(p, vec2(r, 0.015)));
-        r -= .15;
+        d = min(d, sdTorus(p, vec2(r, 0.01)));
+        r -= .1+((1.-(1./(1.+log((2.*now/float(RING_COUNT))+1.))))*.04);
     }
     return d;
 }
