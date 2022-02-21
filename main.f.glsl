@@ -14,7 +14,7 @@ uniform float now;
 uniform vec2 winsize;
 uniform float minwid;
 uniform float maxwid;
-#define time log(now/PHI)
+#define time (log(now)+now)
 #define size vec2(minwid)
 
 float rndStart(vec2 co){return fract(sin(dot(co,vec2(123.42,117.853)))*412.453);}
@@ -84,7 +84,7 @@ void startRing(vec2 seed) {
 float DE(vec3 p0)
 {
     float t = time*.3;
-    mat3 m = rotateZ(t)*rotateY(t*.5);
+    mat3 m = rotateZ(t)*rotateY(log(t*t));
     vec3 p = p0*m;
 	float d = length(p0)+1.;
     float r = (1.+PHI)*(MAX_RADIUS);
