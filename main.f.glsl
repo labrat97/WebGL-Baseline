@@ -91,7 +91,7 @@ float DE(vec3 p0)
     for(int i = 0; i < RING_COUNT; ++i)
     {
         p *= rotateZ(t*float(i+1)/(float(RING_COUNT)*pow(PHI, float(i)*PHI))) * rotateY(t*PI*float(i+1)/(float(RING_COUNT)*pow(PHI, float(i)*PHI)));
-        d = min(d, sdTorus(p, vec2(r, 0.01)));
+        d = min(d, sdTorus(p, vec2(r, 0.01375*minwid/1000.)));
         r -= .1+((1.-(1./(1.+log((2.*now/float(RING_COUNT))+1.))))*.04);
     }
     return d;
@@ -188,7 +188,7 @@ vec4 pixel(vec2 pxx)
 	float t=DDE(ro,rd).y*rndStart(pxx),d,od=1.0;
     bool hit = false;
 	vec4 col=vec4(0.);//color accumulator
-	for(int i=0;i<144;i++){
+	for(int i=0;i<25;i++){
 		vec2 v=DDE(ro+rd*t,rd);
 		d=v.x;//DE(ro+rd*t);
 		float px=pxl*(1.0+t);
