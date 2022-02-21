@@ -15,7 +15,7 @@ uniform float now;
 uniform vec2 winsize;
 uniform float minwid;
 uniform float maxwid;
-#define time (log(now)+now)
+#define time ((1.-pow(now/PHI, -PHI))*now)
 #define size vec2(minwid)
 
 float rndStart(vec2 co){return fract(sin(dot(co,vec2(123.42,117.853)))*412.453);}
@@ -90,7 +90,7 @@ float DE(vec3 p0)
     float r = (1.+PHI)*(MAX_RADIUS);
     for(int i = 0; i < RING_COUNT; ++i)
     {
-        p *= rotateZ(t*float(i+1)/(float(RING_COUNT)*PHI)) * rotateY(t*PI*float(i+1)/(float(RING_COUNT)*PHI));
+        p *= rotateZ(t*float(i+1)/(float(RING_COUNT)*pow(PHI, float(i)*PHI))) * rotateY(t*PI*float(i+1)/(float(RING_COUNT)*pow(PHI, float(i)*PHI)));
         d = min(d, sdTorus(p, vec2(r, 0.015)));
         r -= .15;
     }
