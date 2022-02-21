@@ -8,6 +8,7 @@ precision lowp float;
 #define PHI ((sqrt(5.)+1.)/2.)
 #define MAX_RADIUS 0.5
 #define PI 3.14159265358
+#define RING_COUNT 8
 
 // Bring in the outside information needed for updating
 uniform float now;
@@ -83,15 +84,14 @@ void startRing(vec2 seed) {
 
 float DE(vec3 p0)
 {
-    float t = time*.3;
-    mat3 m = rotateZ(t)*rotateY(log(t*t));
-    vec3 p = p0*m;
+    float t = time;
+    vec3 p = p0;
 	float d = length(p0)+1.;
     float r = (1.+PHI)*(MAX_RADIUS);
-    for(int i = 0; i < 8; ++i)
+    for(int i = 0; i < RING_COUNT; ++i)
     {
+        p *= rotateZ(t*float(i+1)/(float(RING_COUNT)*PHI)) * rotateY(t*PI*float(i+1)/(float(RING_COUNT)*PHI));
         d = min(d, sdTorus(p, vec2(r, 0.015)));
-        p *= m;
         r -= .15;
     }
     return d;
@@ -149,7 +149,7 @@ vec3 compute_color(vec3 ro, vec3 rd, float t)
     vec3 nor = normal(p);
     vec3 ref = reflect(rd, nor);
     
-    vec3 c = hsv2rgb(vec3(-0.02-((log(length(p)))*exp(-exp(1.))), 1., 1.));
+    vec3 c = hsv2rgb(vec3(0.125-((pow(length(p),PHI))*exp(-PHI)), 1., 1.));
     
     
     float dif = clamp( dot( nor, l ), 0.0, 1.0 );
@@ -200,12 +200,20 @@ vec4 pixel(vec2 pxx)
 		t+=v.y;//d;
 		if(t>10.0)break;
 	}
-    return hit ? vec4(compute_color(ro, rd, t), 1.) : 
-    			 vec4(hsv2rgb(vec3(0.04*(cos(0.3*now+rndStart(pxx))+(1.-(1./PHI)))/2., 1., 0.5*exp(-pow(distRel*2.*PI*PHI,2.)/2.))),1.);
+
+    if (hit) {
+        return vec4(compute_color(ro, rd, t), 1.);
+    }
+
+    float blankHue = 0.04*(cos(0.3*now+rndStart(pxx))+(1.-(1./PHI)))/2.;
+    float saturation = 1.;
+    float alpha = 1./(1.+exp(-(now-PI)));
+    float value = 0.5*exp(-pow(distRel*2.*PI,2.)/2.)*alpha;
+    return vec4(hsv2rgb(vec3(blankHue, saturation, value)), alpha);
 }
 void main() {
     startRing(gl_FragCoord.xy);
     vec2 xy = (gl_FragCoord.xy/size);
 	float v = .6 + 0.4*pow(20.0*xy.x*xy.y*(1.0-xy.x)*(1.0-xy.y), 0.5);
-	gl_FragColor=pow(pixel(gl_FragCoord.xy)*v, vec4(1./2.2));
+	gl_FragColor=pixel(gl_FragCoord.xy);
 } 
