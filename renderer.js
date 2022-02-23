@@ -1,9 +1,11 @@
 ;(function(){
 "use strict"
 
+// Set up global program data
 window.addEventListener("load", setupWebGL, false);
 var gl, program, winform, minwid, maxwid, nowlck, backbuff, backbuffpix;
 var progStart = new Date();
+const V_COUNT = 1024;
 
 async function setupWebGL (evt) {
   // Create a rendering context. In other words, create the base canvas to draw
@@ -65,10 +67,18 @@ async function setupWebGL (evt) {
   minwid = gl.getUniformLocation(program, "minwid");
   maxwid = gl.getUniformLocation(program, "maxwid");
   nowlck = gl.getUniformLocation(program, "now");
+  centerlck = gl.getUniformLocation(program, "center");
+  plck = gl.getUniformLocation(program, "pval");
+  qlck = gl.getUniformLocation(program, "qval");
+  rotlck = gl.getUniformLocation(program, "rotation");
   gl.uniform2f(winform, gl.drawingBufferWidth, gl.drawingBufferHeight);
   gl.uniform1f(minwid, smallestWinSize());
   gl.uniform1f(nowlck, timeFloat());
   gl.uniform1f(maxwid, largestWinSize());
+  gl.uniform2f(centerlck, 0, 0);
+  gl.uniform1f(plck, 9);
+  gl.uniform1f(qlck, 7);
+  gl.uniform3f(rotlck, 1.,0.,0.5);
   
   // Now that the program is all glued together, get rid of the compiled shader
   // chunks. We wouldn't want to eat up the ever-so-valueable resources would we?
@@ -123,8 +133,12 @@ async function setupWebGL (evt) {
     gl.uniform1f(minwid, smallestWinSize());
     gl.uniform1f(maxwid, largestWinSize());
     gl.uniform1f(nowlck, timeFloat());
+    gl.uniform2f(centerlck, 0, 0);
+    gl.uniform1f(plck, 9);
+    gl.uniform1f(qlck, 7);
+    gl.uniform3f(rotlck, 1.,0.,0.5);
 
-    gl.drawArrays(gl.TRIANGLES, 0, 3);
+    gl.drawArrays(gl.POINTS, 0, V_COUNT);
   }, [(1./30.)*1000.]);
 }
 
@@ -155,19 +169,22 @@ function timeFloat() {
 // the anchor to the base of the shaders.
 var posbuf;
 function initializeAttributes() {
+  // Create the rotational coordinates for the vertex buffer
+  var jspos = Array(3*V_COUNT);
+  for (let i = 0; i < 3*V_COUNT; i += 3) {
+    vbuff[i] = i / (3*V_COUNT);
+    vbuff[i+1] = 0;
+    vbuff[i+2] = 0;
+  }
+
   // Create the base buffer for the vertices
   gl.enableVertexAttribArray(0);
   posbuf = gl.createBuffer();  
   gl.bindBuffer(gl.ARRAY_BUFFER, posbuf);
 
-  // Set up the rendering triangle
-  var positions = [
-    -3, -3,
-    3, 0.,
-    -3, 3,
-  ];
-  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
-  gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
+  // Apply the buffer to the gl program
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(jspos), gl.STATIC_DRAW);
+  gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 0, 0);
 }
 
 // Make the main program null, delete the running program, and delete the main
