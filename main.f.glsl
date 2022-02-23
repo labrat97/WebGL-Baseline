@@ -9,7 +9,7 @@ precision highp float;
 #define MIN_RADIUS (PI/7.)
 #define MAX_INNER_GAIN 0.8
 #define MIN_INNER_GAIN 0.2
-#define TRACE_COUNT 255
+#define TRACE_COUNT PHI*255.
 #define _TRACE_ITER TAU/float(TRACE_COUNT)
 
 
@@ -18,7 +18,7 @@ uniform float now;
 uniform vec2 winsize;
 uniform float minwid;
 uniform float maxwid;
-#define time ((1.-pow(now, -PI))*now)
+#define time ((1.-pow(now, -PI))*now/2.)
 #define size vec2(minwid)
 
 //float rndStart(vec2 co){return fract(sin(dot(co,vec2(123.42,117.853)))*412.453);}
@@ -79,7 +79,7 @@ vec3 _toroid(float p, float q, float theta, float phi, float outer, float innerG
     float r = ((outer-inner)*pcos(skiniter))+inner;
     float x = r*cos(theta);
     float y = r*sin(theta);
-    float z = (inner-outer)*sin(skiniter);
+    float z = (inner-outer)*sin(skiniter)/2.;
 
     return vec3(x,y,z);
 }
@@ -101,14 +101,14 @@ vec3 toroid(float trace, vec2 posbias, float p, float q, float outer, float inne
 void main() {
     // Some running config
     vec2 posbias = vec2(0.0);
-    vec3 rot = vec3(PI/4.,0.,PI/6.);
+    vec3 rot = vec3(PI/2.5,0.,PI/6.);
     vec4 bgColor = vec4(0.25,0.,0.,1.);
 
     // Get position relative to the toroid
     vec2 posrel = ((gl_FragCoord.xy-(winsize/2.))/(minwid/2.));
     vec3 posrot = rotateX(rot.x) * rotateY(rot.y) * vec3(posrel, 0.);
     float posrotlen = length(posrot);
-    if (posrotlen > MAX_RADIUS || posrotlen < (MAX_RADIUS*MIN_INNER_GAIN)) {
+    if (posrotlen > MAX_RADIUS) {
         gl_FragColor = bgColor;
         return;
     }
@@ -116,7 +116,7 @@ void main() {
     // Calulate outer toroidal distance
     vec3 tor = toroid(time, posbias, 9., 7., 5.*cos(time/7.), sin(time/5.)+1., rot);
     float torlen = length(tor.xy-posrel);
-    float z = 0.;
+    float z = tor.z;
     for (float idx = _TRACE_ITER; idx < TAU; idx += _TRACE_ITER) {
         tor = toroid(time+(48.*idx), posbias, 9., 7., 5.*cos(time/7.), sin(time/5.)+1., rot);
         float temp = length(tor.xy-posrel);
@@ -127,5 +127,5 @@ void main() {
     }
 
     // Render the locally closest toroid
-    gl_FragColor = torlen < 0.007*(2.*sigmoid(z*3.)) ? vec4(1.) : bgColor;
+    gl_FragColor = torlen < 0.007*(2.*sigmoid(z*PI)) ? vec4(1.) : bgColor;
 }
