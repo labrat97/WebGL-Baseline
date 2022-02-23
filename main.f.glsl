@@ -106,19 +106,19 @@ void main() {
 
     // Get position relative to the toroid
     vec2 posrel = ((gl_FragCoord.xy-(winsize/2.))/(minwid/2.));
-    vec3 posrot = rotateX(rot.x) * rotateY(rot.y) * vec3(posrel, 0.);
-    float posrotlen = length(posrot);
-    if (posrotlen > MAX_RADIUS) {
+    float outer = 5.*cos(time/7.);
+    float outerFormat = (sigmoid(outer)*(MAX_RADIUS-MIN_RADIUS))+MIN_RADIUS;
+    if (length(posrel) > outerFormat+0.007) {
         gl_FragColor = bgColor;
         return;
     }
 
     // Calulate outer toroidal distance
-    vec3 tor = toroid(time, posbias, 9., 7., 5.*cos(time/7.), sin(time/5.)+1., rot);
+    vec3 tor = toroid(time, posbias, 9., 7., outer, sin(time/5.)+1., rot);
     float torlen = length(tor.xy-posrel);
     float z = tor.z;
     for (float idx = _TRACE_ITER; idx < TAU; idx += _TRACE_ITER) {
-        tor = toroid(time+(48.*idx), posbias, 9., 7., 5.*cos(time/7.), sin(time/5.)+1., rot);
+        tor = toroid(time+(48.*idx), posbias, 9., 7., outer, sin(time/5.)+1., rot);
         float temp = length(tor.xy-posrel);
         if (temp < torlen) {
             torlen = temp;
