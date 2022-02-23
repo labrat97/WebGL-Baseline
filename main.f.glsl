@@ -9,6 +9,8 @@ precision highp float;
 #define MIN_RADIUS (PI/7.)
 #define MAX_INNER_GAIN 0.8
 #define MIN_INNER_GAIN 0.2
+#define TRACE_COUNT 255
+#define _TRACE_ITER TAU/float(TRACE_COUNT)
 
 
 // Bring in the outside information needed for updating
@@ -81,62 +83,49 @@ vec3 _toroid(float p, float q, float theta, float phi, float outer, float innerG
 
     return vec3(x,y,z);
 }
-vec4 toroid(vec2 posrel, vec2 posbias, float p, float q, float outer, float inner, vec3 pyr) {
+vec3 toroid(float trace, vec2 posbias, float p, float q, float outer, float inner, vec3 pyr) {
     // Calculate all of the rotation matrices
     mat3 rotX = rotateX(pyr.x);
     mat3 rotY = rotateY(pyr.y);
     mat3 rot = rotX * rotY;
-    
-    // Center and scale the frag coords, centering again with the newcenter variable
-    // This will serve as the variable for the position in toroid-space relative to the center of the knot
-    vec2 posrelcent = (posrel-posbias);
-    vec2 posrelrot = vec2(posrelcent.x/cos(pyr.y), posrelcent.y/cos(pyr.x));
-    float theta = atan(posrelrot.y, posrelrot.x);
 
     // Softly bound the inner and outer radii so that the knot fits in the screen
     float outbound = ((MAX_RADIUS-MIN_RADIUS)*sigmoid(outer))+MIN_RADIUS;
     float inbound = ((MAX_INNER_GAIN-MIN_INNER_GAIN)*sigmoid(inner))+MIN_INNER_GAIN;
 
     // Calculate the first result
-    vec3 result = rot * _toroid(p, q, theta, pyr.z, outbound, inbound);
-
-    // Check the distance from the relative center to the first result
-    float dist = length(result.xy-posrelcent);
-    float minrot = pyr.z;
-    for (int i = 1; i > 0; i++) {
-        vec3 temp = rot * _toroid(p, q, theta, pyr.z+(float(i)*PI), outbound, inbound);
-        float tdst = length(temp.xy-posrelcent);
-
-        if (tdst < dist) {
-            dist = tdst;
-            result = temp;
-            minrot = pyr.z+(2.*float(i)*PI);
-        }
-
-        if (i >= 2*int(0.5+((p-1.)*(q-1.)))) break;
-    }
-
-    float diff = dist*dist;
-    return vec4(result + vec3(posbias, 0.), diff);
+    vec3 result = rot * _toroid(p, q, trace, pyr.z, outbound, inbound);
+    return result;
 }
 
 void main() {
     // Some running config
     vec2 posbias = vec2(0.0);
-    vec3 rot = vec3(PI/3.,0.,PI/6.);
+    vec3 rot = vec3(PI/4.,0.,PI/6.);
     vec4 bgColor = vec4(0.25,0.,0.,1.);
 
     // Get position relative to the toroid
     vec2 posrel = ((gl_FragCoord.xy-(winsize/2.))/(minwid/2.));
+    vec3 posrot = rotateX(rot.x) * rotateY(rot.y) * vec3(posrel, 0.);
+    float posrotlen = length(posrot);
+    if (posrotlen > MAX_RADIUS || posrotlen < (MAX_RADIUS*MIN_INNER_GAIN)) {
+        gl_FragColor = bgColor;
+        return;
+    }
 
     // Calulate outer toroidal distance
-    vec4 tor = toroid(posrel, posbias, 9., 7., 5.*cos(time/7.), sin(time/5.)+1., rot);
+    vec3 tor = toroid(time, posbias, 9., 7., 5.*cos(time/7.), sin(time/5.)+1., rot);
     float torlen = length(tor.xy-posrel);
-    // Calculate inner toroidal distance
-    tor = toroid(posrel, posbias, 3., 2., 4.*(cos(time/7.)-0.5), 7.*sin(time/5.), rot);
-    torlen = min(torlen, length(tor.xy-posrel));
+    float z = 0.;
+    for (float idx = _TRACE_ITER; idx < TAU; idx += _TRACE_ITER) {
+        tor = toroid(time+(48.*idx), posbias, 9., 7., 5.*cos(time/7.), sin(time/5.)+1., rot);
+        float temp = length(tor.xy-posrel);
+        if (temp < torlen) {
+            torlen = temp;
+            z = tor.z;
+        }
+    }
 
     // Render the locally closest toroid
-    gl_FragColor = vec4(vec3(tor.w), 1.);
-    gl_FragColor = torlen < 0.007 ? vec4(1.) : bgColor;
+    gl_FragColor = torlen < 0.007*(2.*sigmoid(z*3.)) ? vec4(1.) : bgColor;
 }
