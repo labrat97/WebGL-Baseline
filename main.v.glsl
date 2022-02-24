@@ -11,6 +11,8 @@ uniform float maxwid;
 
 attribute vec4 inPos;
 
+varying float ringSel;
+
 #define PHI ((sqrt(5.)+1.)/2.)
 #define PI 3.141592653589793238462643383279502884197169399375105820974944592307
 #define TAU (2.*PI)
@@ -56,7 +58,7 @@ vec3 _toroid(float p, float q, float theta, float phi, float outer, float innerG
     float r = ((outer-inner)*pcos(skiniter))+inner;
     float x = r*cos(theta);
     float y = r*sin(theta);
-    float z = (outer-inner)*psin(skiniter)/2.;
+    float z = (inner-outer)*sin(skiniter)/2.;
 
     return vec3(x,y,z);
 }

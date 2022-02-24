@@ -7,7 +7,7 @@ var gl, program, winform, minwid, maxwid, nowlck, centerlck, qlck, plck, rotlck;
 var progStart = new Date();
 const V_COUNT = 2**12;
 const PI = 3.141592653589;
-const ROT_X = PI/4.;
+const ROT_X = PI/3.;
 const ROT_Y = 0;
 const ROT_Z = PI/6.;
 const P_VAL = 9;
@@ -146,7 +146,8 @@ async function setupWebGL (evt) {
 
     gl.enableVertexAttribArray(0);
     gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
-    gl.clear(gl.COLOR_BUFFER_BIT);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    gl.enable(gl.BLEND);
     gl.drawArrays(gl.POINTS, 0, V_COUNT);
   }, [(1./30.)*1000.]);
 }
@@ -191,6 +192,9 @@ function initializeAttributes() {
 
   // Apply the buffer to the gl program
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(jspos), gl.STATIC_DRAW);
+
+  // Set the blending function so the buffer renders right
+  gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 }
 
 // Make the main program null, delete the running program, and delete the main
