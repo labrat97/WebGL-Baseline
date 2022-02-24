@@ -11,7 +11,7 @@ uniform float now;
 #define TAU (2.*PI)
 #define EPS (1.*pow(10., -9.))
 #define HUE_BIAS -PI/12.
-#define HUE_STEP PI/24.
+#define HUE_STEP PI/9779.
 
 vec3 hsv2rgb(vec3 c) {
     vec4 K = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
@@ -34,7 +34,7 @@ void main() {
     else {
         float distmod = sigmoid(PI*exp(-knotDepth));
         float noise = (sigmoid(rand(gl_FragCoord.xy+vec2(now)+gl_PointCoord.xy))-0.5);
-        vec3 hsv = vec3(HUE_BIAS + (noise/PI) + pow(HUE_STEP*knotSel, PHI), 1., distmod);
+        vec3 hsv = vec3(HUE_BIAS + (noise/PI) + pow(HUE_STEP*knotSel, 1./TAU), 1., distmod);
         vec3 rgb = hsv2rgb(hsv);
         gl_FragColor = vec4(rgb, 1.);
     }
