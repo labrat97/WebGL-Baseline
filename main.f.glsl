@@ -1,4 +1,4 @@
-precision highp float;
+precision mediump float;
 
 // Defines required for proper program run
 #define PHI ((sqrt(5.)+1.)/2.)
@@ -6,5 +6,10 @@ precision highp float;
 #define TAU (2.*PI)
 
 void main() {
-    gl_FragColor = vec4(1.);
+    float dist = length(gl_PointCoord.xy-0.5)*2.;
+    float val = 0.;
+    if (dist <= 1.) {
+        val = 1.;
+    }
+    gl_FragColor = vec4(1.,1.,1.,val);
 }

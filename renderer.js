@@ -3,9 +3,16 @@
 
 // Set up global program data
 window.addEventListener("load", setupWebGL, false);
-var gl, program, winform, minwid, maxwid, nowlck, backbuff, backbuffpix;
+var gl, program, winform, minwid, maxwid, nowlck, centerlck, qlck, plck, rotlck;
 var progStart = new Date();
-const V_COUNT = 1024;
+const V_COUNT = 2**12;
+const PI = 3.141592653589;
+const ROT_X = PI/4.;
+const ROT_Y = 0;
+const ROT_Z = PI/6.;
+const P_VAL = 9;
+const Q_VAL = 7;
+
 
 async function setupWebGL (evt) {
   // Create a rendering context. In other words, create the base canvas to draw
@@ -37,8 +44,8 @@ async function setupWebGL (evt) {
     var cerrLog = gl.getShaderInfoLog(vertexShader);
     cleanup();
     document.querySelector("p").innerHTML =
-      "Vertex shader did not compile successfully. "
-      + "Error log: " + cerrLog;
+      "Vertex shader did not compile successfully.\n"
+      + "Error log:\n" + cerrLog;
     return;
   }
 
@@ -53,8 +60,8 @@ async function setupWebGL (evt) {
     var cerrLog = gl.getShaderInfoLog(fragmentShader);
     cleanup();
     document.querySelector("p").innerHTML = 
-      "Fragment shader did not compile successfully. "
-      + "Error log: " + cerrLog;
+      "Fragment shader did not compile successfully.\n"
+      + "Error log:\n" + cerrLog;
     return;
   }
 
@@ -76,9 +83,9 @@ async function setupWebGL (evt) {
   gl.uniform1f(nowlck, timeFloat());
   gl.uniform1f(maxwid, largestWinSize());
   gl.uniform2f(centerlck, 0, 0);
-  gl.uniform1f(plck, 9);
-  gl.uniform1f(qlck, 7);
-  gl.uniform3f(rotlck, 1.,0.,0.5);
+  gl.uniform1f(plck, P_VAL);
+  gl.uniform1f(qlck, Q_VAL);
+  gl.uniform3f(rotlck, ROT_X,ROT_Y,ROT_Z);
   
   // Now that the program is all glued together, get rid of the compiled shader
   // chunks. We wouldn't want to eat up the ever-so-valueable resources would we?
@@ -105,7 +112,6 @@ async function setupWebGL (evt) {
   // Load the compiled and linked program, then make the program render itself at
   // approximately 30 fps. The extra code is needed to keep the canvas locked to
   // the size of the displaying window.
-  // TODO: Better timing, event based window resize things
   gl.useProgram(program);
   setInterval(function() {
     var canvas = document.querySelector("canvas");
@@ -133,11 +139,14 @@ async function setupWebGL (evt) {
     gl.uniform1f(minwid, smallestWinSize());
     gl.uniform1f(maxwid, largestWinSize());
     gl.uniform1f(nowlck, timeFloat());
-    gl.uniform2f(centerlck, 0, 0);
-    gl.uniform1f(plck, 9);
-    gl.uniform1f(qlck, 7);
-    gl.uniform3f(rotlck, 1.,0.,0.5);
+    gl.uniform2f(centerlck, 0., 0.);
+    gl.uniform1f(plck, P_VAL);
+    gl.uniform1f(qlck, Q_VAL);
+    gl.uniform3f(rotlck, ROT_X, ROT_Y, ROT_Z);
 
+    gl.enableVertexAttribArray(0);
+    gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
+    gl.clear(gl.COLOR_BUFFER_BIT);
     gl.drawArrays(gl.POINTS, 0, V_COUNT);
   }, [(1./30.)*1000.]);
 }
@@ -170,21 +179,18 @@ function timeFloat() {
 var posbuf;
 function initializeAttributes() {
   // Create the rotational coordinates for the vertex buffer
-  var jspos = Array(3*V_COUNT);
-  for (let i = 0; i < 3*V_COUNT; i += 3) {
-    vbuff[i] = i / (3*V_COUNT);
-    vbuff[i+1] = 0;
-    vbuff[i+2] = 0;
+  var jspos = Array(2*V_COUNT);
+  for (let i = 0; i < 2*V_COUNT; i += 2) {
+    jspos[i] = (i / (2*V_COUNT))-1.;
+    jspos[i+1] = 0.;
   }
 
   // Create the base buffer for the vertices
-  gl.enableVertexAttribArray(0);
-  posbuf = gl.createBuffer();  
+  posbuf = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, posbuf);
 
   // Apply the buffer to the gl program
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(jspos), gl.STATIC_DRAW);
-  gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 0, 0);
 }
 
 // Make the main program null, delete the running program, and delete the main
