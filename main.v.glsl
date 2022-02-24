@@ -79,8 +79,16 @@ vec3 toroid(float trace, float p, float q, float outer, float inner, vec3 pyr) {
 
 // Really not doing anything with this right now
 void main() {
-    float rot = TAU * inPos.x * (pval - 1.) * (qval - 1.);
-    vec3 tor = toroid(rot, pval, qval, 5.*cos(time), 5.*sin(time/PHI), rotation);
+    float wp = pval;
+    float wq = qval;
+    if (pval < qval) {
+        wp -= 1.;
+        wq -= 1.;
+    }
+    float rot = TAU * inPos.x * pval * qval;
+    vec3 lrot = rotation;
+    lrot.z += time/3.;
+    vec3 tor = toroid(rot, pval, qval, 5.*cos(time), 5.*sin(time/PHI), lrot);
     gl_Position = vec4(vec2(tor.xy*minwid/winsize), tor.z, 1.);
     gl_PointSize = pow((normalize(gl_Position.xyz).z+1.5), 2.);
 }

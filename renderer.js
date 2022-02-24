@@ -5,13 +5,13 @@
 window.addEventListener("load", setupWebGL, false);
 var gl, program, winform, minwid, maxwid, nowlck, centerlck, qlck, plck, rotlck;
 var progStart = new Date();
-const V_COUNT = 2**12;
+const V_COUNT = (2**13);
 const PI = 3.141592653589;
-const ROT_X = PI/3.;
+const ROT_X = PI/4.;
 const ROT_Y = 0;
 const ROT_Z = PI/6.;
-const P_VAL = 9;
-const Q_VAL = 7;
+const P_VAL = 2;
+const Q_VAL = 3;
 
 
 async function setupWebGL (evt) {
