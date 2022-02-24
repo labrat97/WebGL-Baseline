@@ -6,12 +6,13 @@ window.addEventListener("load", setupWebGL, false);
 var gl, program, winform, minwid, maxwid, nowlck, centerlck, qlck, plck, rotlck;
 var progStart = new Date();
 const V_COUNT = (2**13);
+const K_COUNT = 5;
 const PI = 3.141592653589;
-const ROT_X = PI/4.;
-const ROT_Y = 0;
-const ROT_Z = PI/6.;
-const P_VAL = 2;
-const Q_VAL = 3;
+const PITCH = PI/3.;
+const YAW = 0.;
+const ROLL = PI/2.;
+const P_VAL = [-9, 5, -5, 2, -3];
+const Q_VAL = [7, -7, 3, -3, 2];
 
 
 async function setupWebGL (evt) {
@@ -85,7 +86,7 @@ async function setupWebGL (evt) {
   gl.uniform2f(centerlck, 0, 0);
   gl.uniform1f(plck, P_VAL);
   gl.uniform1f(qlck, Q_VAL);
-  gl.uniform3f(rotlck, ROT_X,ROT_Y,ROT_Z);
+  gl.uniform3f(rotlck, PITCH,YAW,ROLL);
   
   // Now that the program is all glued together, get rid of the compiled shader
   // chunks. We wouldn't want to eat up the ever-so-valueable resources would we?
@@ -142,13 +143,12 @@ async function setupWebGL (evt) {
     gl.uniform2f(centerlck, 0., 0.);
     gl.uniform1f(plck, P_VAL);
     gl.uniform1f(qlck, Q_VAL);
-    gl.uniform3f(rotlck, ROT_X, ROT_Y, ROT_Z);
+    gl.uniform3f(rotlck, PITCH, YAW, ROLL);
 
     gl.enableVertexAttribArray(0);
-    gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
+    gl.vertexAttribPointer(0, 4, gl.FLOAT, false, 0, 0);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-    gl.enable(gl.BLEND);
-    gl.drawArrays(gl.POINTS, 0, V_COUNT);
+    gl.drawArrays(gl.POINTS, 0, K_COUNT*V_COUNT);
   }, [(1./30.)*1000.]);
 }
 
@@ -180,10 +180,16 @@ function timeFloat() {
 var posbuf;
 function initializeAttributes() {
   // Create the rotational coordinates for the vertex buffer
-  var jspos = Array(2*V_COUNT);
-  for (let i = 0; i < 2*V_COUNT; i += 2) {
-    jspos[i] = (i / (2*V_COUNT))-1.;
-    jspos[i+1] = 0.;
+  var jspos = Array(K_COUNT*4*V_COUNT);
+  for (let k = 0; k < K_COUNT; k += 1) {
+    var offset = k * (4*V_COUNT);
+    for (let i = 0; i < 4*V_COUNT; i += 4) {
+      var localoff = offset+i;
+      jspos[localoff] = (i / (4*V_COUNT))-1.;
+      jspos[localoff+1] = k;
+      jspos[localoff+2] = P_VAL[k];
+      jspos[localoff+3] = Q_VAL[k];
+    }
   }
 
   // Create the base buffer for the vertices
@@ -192,9 +198,7 @@ function initializeAttributes() {
 
   // Apply the buffer to the gl program
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(jspos), gl.STATIC_DRAW);
-
-  // Set the blending function so the buffer renders right
-  gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+	gl.enable(gl.DEPTH_TEST);
 }
 
 // Make the main program null, delete the running program, and delete the main
@@ -215,8 +219,7 @@ function getRenderingContext() {
   canvas.width = canvas.clientWidth;
   canvas.height = canvas.clientHeight;
 
-  var gl = canvas.getContext("webgl", {preserveDrawingBuffer: true}) 
-    || canvas.getContext("experimental-webgl", {preserveDrawingBuffer: true});
+  var gl = canvas.getContext("webgl", {preserveDrawingBuffer: true});
   
   if (!gl) {
     var paragraph = document.querySelector("p");

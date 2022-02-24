@@ -1,8 +1,6 @@
-precision highp float;
+precision mediump float;
 
 uniform vec2 center;
-uniform float pval;
-uniform float qval;
 uniform vec3 rotation;
 uniform float now;
 uniform vec2 winsize;
@@ -11,15 +9,18 @@ uniform float maxwid;
 
 attribute vec4 inPos;
 
-varying float ringSel;
+varying float knotSel;
+varying float knotDepth;
 
 #define PHI ((sqrt(5.)+1.)/2.)
 #define PI 3.141592653589793238462643383279502884197169399375105820974944592307
 #define TAU (2.*PI)
-#define MAX_RADIUS (PI/4.)
-#define MIN_RADIUS (PI/7.)
+#define MAX_RADIUS .9
+#define MIN_RADIUS (PI/4.)
 #define MAX_INNER_GAIN 0.8
 #define MIN_INNER_GAIN 0.2
+#define INNER_SEP 3.
+#define EPS 0.0000000001
 #define time ((1.-pow(now+0.5, -PI))*now/2.)
 
 
@@ -28,9 +29,6 @@ float sigmoid(float xin) {
 }
 float pcos(float xin) {
     return (cos(xin)+1.)/2.;
-}
-float psin(float xin) {
-    return (sin(xin)+1.)/2.;
 }
 // Rotation matrix around the X axis.
 mat3 rotateX(float theta) {
@@ -62,7 +60,7 @@ vec3 _toroid(float p, float q, float theta, float phi, float outer, float innerG
 
     return vec3(x,y,z);
 }
-vec3 toroid(float trace, float p, float q, float outer, float inner, vec3 pyr) {
+vec3 toroid(float trace, float p, float q, float outer, float inner, vec3 pyr, vec3 rotbias) {
     // Calculate all of the rotation matrices
     mat3 rotX = rotateX(pyr.x);
     mat3 rotY = rotateY(pyr.y);
@@ -73,22 +71,35 @@ vec3 toroid(float trace, float p, float q, float outer, float inner, vec3 pyr) {
     float inbound = ((MAX_INNER_GAIN-MIN_INNER_GAIN)*sigmoid(inner))+MIN_INNER_GAIN;
 
     // Calculate the first result
-    vec3 result = rot * _toroid(p, q, trace, pyr.z, outbound, inbound);
+    vec3 result = rot * (rotbias+_toroid(p, q, trace, pyr.z, outbound, inbound));
     return result;
 }
 
-// Really not doing anything with this right now
 void main() {
-    float wp = pval;
-    float wq = qval;
-    if (pval < qval) {
-        wp -= 1.;
-        wq -= 1.;
+    // Extract the data from the input attributes to be warped
+    float wp = inPos.p;
+    float wq = inPos.q;
+    float inrot = inPos.s;
+    knotSel = inPos.t;
+    float knotSelMajor = float(int(knotSel/2.));
+    float sep = 0.;
+    if ((knotSel/2.)-knotSelMajor > EPS) {
+        sep = INNER_SEP;
     }
-    float rot = TAU * inPos.x * pval * qval;
+
+    // Create base rotations for the vertex
+    float theta = TAU * inPos.x * wp * wq;
     vec3 lrot = rotation;
-    lrot.z += time/3.;
-    vec3 tor = toroid(rot, pval, qval, 5.*cos(time), 5.*sin(time/PHI), lrot);
+    lrot.z -= pow(knotSel+1., sqrt(PHI/4.))*time/3.;
+    lrot.x *= -1.;
+
+    // Map rotational coordinate to the toroid
+    vec3 tor = toroid(theta, wp, wq, (PI*(cos(time)-(TAU*knotSelMajor+1.))) - sep, 
+        (3.*(knotSelMajor+1.)*sin(time/PHI))+sep, lrot*((knotSel+5.))/9.,
+        vec3(0.,0.,-knotSelMajor/TAU))*(1.-(knotSelMajor/TAU));
+    
+    // Make all data needed available to the fragment shader
     gl_Position = vec4(vec2(tor.xy*minwid/winsize), tor.z, 1.);
-    gl_PointSize = pow((normalize(gl_Position.xyz).z+1.5), 2.);
+    knotDepth = tor.z;
+    gl_PointSize = (minwid/1024.)*exp(-PI*tor.z)*(1.+knotSelMajor/2.);
 }
