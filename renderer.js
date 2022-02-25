@@ -8,9 +8,9 @@ var progStart = new Date();
 const V_COUNT = (2**13);
 const K_COUNT = 5;
 const PI = 3.141592653589;
-const PITCH = PI/3.;
-const YAW = 0.;
-const ROLL = PI/2.;
+const PITCH = PI/4;
+const YAW = PI/4;
+const ROLL = PI/6;
 const P_VAL = [-9, 5, -5, 2, -3];
 const Q_VAL = [7, -7, 3, -3, 2];
 

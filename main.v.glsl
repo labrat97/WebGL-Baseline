@@ -18,7 +18,7 @@ varying float knotDepth;
 #define MAX_RADIUS .9
 #define MIN_RADIUS (PI/4.)
 #define MAX_INNER_GAIN 0.8
-#define MIN_INNER_GAIN 0.2
+#define MIN_INNER_GAIN 0.4
 #define INNER_SEP 3.
 #define EPS 0.0000000001
 #define time ((1.-pow(now+0.5, -PI))*now/2.)
@@ -50,6 +50,15 @@ mat3 rotateY(float theta) {
         vec3(-s, 0, c)
     );
 }
+mat3 rotateZ(float theta) {
+    float c = cos(theta);
+    float s = sin(theta);
+    return mat3(
+        vec3(c, s, 0),
+        vec3(-s,c, 0),
+        vec3(0, 0, 1)
+    );
+}
 vec3 _toroid(float p, float q, float theta, float phi, float outer, float innerGain) {
     float inner = outer*innerGain;
     float skiniter = p*(theta+phi)/q;
@@ -64,14 +73,15 @@ vec3 toroid(float trace, float p, float q, float outer, float inner, vec3 pyr, v
     // Calculate all of the rotation matrices
     mat3 rotX = rotateX(pyr.x);
     mat3 rotY = rotateY(pyr.y);
-    mat3 rot = rotX * rotY;
+    mat3 rotZ = rotateZ(pyr.z);
+    mat3 rot = rotX * rotY * rotZ;
 
     // Softly bound the inner and outer radii so that the knot fits in the screen
     float outbound = ((MAX_RADIUS-MIN_RADIUS)*sigmoid(outer))+MIN_RADIUS;
     float inbound = ((MAX_INNER_GAIN-MIN_INNER_GAIN)*sigmoid(inner))+MIN_INNER_GAIN;
 
     // Calculate the first result
-    vec3 result = rot * (rotbias+_toroid(p, q, trace, pyr.z, outbound, inbound));
+    vec3 result = rot * (rotbias+_toroid(p, q, trace, 0., outbound, inbound));
     return result;
 }
 
@@ -81,7 +91,7 @@ void main() {
     float wq = inPos.q;
     float inrot = inPos.s;
     knotSel = inPos.t;
-    float knotSelMajor = float(int(knotSel/2.));
+    float knotSelMajor = float(int((knotSel+1.)/2.));
     float sep = 0.;
     if ((knotSel/2.)-knotSelMajor > EPS) {
         sep = INNER_SEP;
@@ -96,10 +106,10 @@ void main() {
     // Map rotational coordinate to the toroid
     vec3 tor = toroid(theta, wp, wq, (PI*(cos(time)-(TAU*knotSelMajor+1.))) - sep, 
         (3.*(knotSelMajor+1.)*sin(time/PHI))+sep, lrot*((knotSel+5.))/9.,
-        vec3(0.,0.,-knotSelMajor/TAU))*(1.-(knotSelMajor/TAU));
+        vec3(0.,0.,-knotSelMajor/(PHI*PI)))*(1.-(knotSelMajor/TAU));
     
     // Make all data needed available to the fragment shader
     gl_Position = vec4(vec2(tor.xy*minwid/winsize), tor.z, 1.);
     knotDepth = tor.z;
-    gl_PointSize = (minwid/1024.)*exp(-PI*tor.z)*(1.+knotSelMajor/2.);
+    gl_PointSize = (minwid/512.)*exp(-PI*tor.z)*(1.+knotSelMajor/2.);
 }
