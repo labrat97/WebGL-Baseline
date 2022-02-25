@@ -5,7 +5,7 @@
 window.addEventListener("load", setupWebGL, false);
 var gl, program, winform, minwid, maxwid, nowlck, centerlck, qlck, plck, rotlck;
 var progStart = new Date();
-const V_COUNT = (2**13);
+const V_COUNT = (2**11);
 const K_COUNT = 5;
 const PI = 3.141592653589;
 const PITCH = PI/4;
