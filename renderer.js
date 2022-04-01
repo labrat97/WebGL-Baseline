@@ -155,7 +155,7 @@ async function setupWebGL (evt) {
     gl.vertexAttribPointer(0, 4, gl.FLOAT, false, 0, 0);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     gl.drawArrays(gl.POINTS, 0, K_COUNT*V_COUNT);
-  }, [(1./30.)*1000.]);
+  }, [(1./48.)*1000.]);
 }
 
 // Get the smallest of the two window dimensions for use in constant output ratio
