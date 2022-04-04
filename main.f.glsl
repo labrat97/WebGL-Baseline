@@ -22,7 +22,7 @@ float sigmoid(float xin) {
     return 1./(1.+exp(-xin));
 }
 float rand(vec2 co){
-    return fract(sin(dot(co, vec2(12.9898, 78.233))) * 43758.5453);
+    return fract(sin(PHI * dot(co, vec2(12.9898, 78.233))) * 43758.5453);
 }
 
 void main() {
