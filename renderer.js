@@ -8,13 +8,14 @@ var progStart = new Date();
 const V_COUNT = (2**12);
 const K_COUNT = 5;
 const PI = 3.141592653589;
-const PITCH = PI/4;
-const YAW = PI/4;
-const ROLL = PI/6;
+const PITCH = 0;
+const YAW = 0;
+const ROLL = 0;
 const VAR_FREQ_SCALAR = Math.exp(-PI);
 const P_VAR_FREQ = 2  * VAR_FREQ_SCALAR;
 const Y_VAR_FREQ = 3  * VAR_FREQ_SCALAR;
 const R_VAR_FREQ = PI * VAR_FREQ_SCALAR;
+const MAX_SWING = PI/3;
 const P_VAL = [-9, 5, -5, 2, -3];
 const Q_VAL = [7, -7, 3, -3, 2];
 
@@ -147,9 +148,9 @@ async function setupWebGL (evt) {
     gl.uniform2f(centerlck, 0., 0.);
     gl.uniform1f(plck, P_VAL);
     gl.uniform1f(qlck, Q_VAL);
-    gl.uniform3f(rotlck, PITCH + ((PI/2) * Math.sin(P_VAR_FREQ*timeFloat())), 
-      YAW + ((PI/2) * Math.sin(Y_VAR_FREQ * timeFloat())), 
-      ROLL + ((PI/2) * Math.sin(R_VAR_FREQ * timeFloat())));
+    gl.uniform3f(rotlck, PITCH + (MAX_SWING * Math.sin(P_VAR_FREQ*timeFloat())), 
+      YAW + (MAX_SWING * Math.sin(Y_VAR_FREQ * timeFloat())), 
+      ROLL + (MAX_SWING * Math.sin(R_VAR_FREQ * timeFloat())));
 
     gl.enableVertexAttribArray(0);
     gl.vertexAttribPointer(0, 4, gl.FLOAT, false, 0, 0);
